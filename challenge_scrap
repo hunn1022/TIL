@@ -1,0 +1,74 @@
+import os
+import csv
+import requests
+from bs4 import BeautifulSoup
+
+
+
+ 
+
+def write_company(company):
+  file = open(f"{company['name']}.csv", mode='w')
+  writer = csv.writer(file)
+  writer.writerow(["place","title","time","pay","date"])
+
+  for job in (company["jobs"]) :
+    writer.writerow(list(job.values()))
+
+
+
+os.system("clear")
+
+alba_url ="http://www.alba.co.kr"
+alba_requests = requests.get(alba_url)
+alba_soup = BeautifulSoup(alba_requests.text,"html.parser")
+main = alba_soup.find("div",{"id":"MainSuperBrand"})
+brands = main.find_all("li",{"class":"impact"})
+
+
+for brand in brands:
+  link = brand.find("a",{"class":"goodsBox-info"})
+  name = brand.find("span",{"class":"company"})
+  link = link['href']
+  name = name.text
+  name = name.replace('/','_')
+
+  company = {'name': name, 'jobs': []}
+
+  jobs_requests = requests.get(link)
+  jobs_soup = BeautifulSoup(jobs_requests.text, "html.parser")
+  tbody = jobs_soup.find("div",{"id":"NormalInfo"}).find("tbody")
+
+  rows = tbody.find_all("tr",{'class':["",'divide']})
+  for row in rows : 
+    local = row.find("td",{'class':'local'})
+    if local:
+      local = local.text
+    
+    time = row.find("td",{'class':'data'})
+    if time : 
+      time = time.text
+    
+
+    title = row.find("td",{"class":"title"})
+    if title:
+      title = title.text
+    
+    pay = row.find("td",{"class":"pay"})
+    if pay :
+      pay = pay.text
+    date = row.find("td",{"class": "date"})
+    if date:
+      date = date.text
+
+
+
+    job = {
+      "place": local,
+      "title": title,
+      "time": time,
+      "pay": pay,
+      "date":date
+    }
+    company['jobs'].append(job)
+  write_company(company)
